@@ -1,0 +1,5 @@
+- name: Check and update packages
+  hosts: all
+  become: true
+  roles:
+    - check_packages

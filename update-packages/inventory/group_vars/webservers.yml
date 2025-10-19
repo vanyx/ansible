@@ -1,0 +1,6 @@
+packages_to_check:
+  - nginx
+  - apache2
+  - git
+
+update_deprecated: false

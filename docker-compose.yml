@@ -1,0 +1,26 @@
+services:
+  node1:
+    build: .
+    image: ansible-lab
+    ports:
+      - "2221:22"
+    volumes:
+      - ~/.ssh/id_rsa_ansible_lab.pub:/home/ansiblelab/.ssh/authorized_keys:ro
+  node2:
+    image: ansible-lab
+    ports:
+      - "2222:22"
+    volumes:
+      - ~/.ssh/id_rsa_ansible_lab.pub:/home/ansiblelab/.ssh/authorized_keys:ro
+  node3:
+    image: ansible-lab
+    ports:
+      - "2223:22"
+    volumes:
+      - ~/.ssh/id_rsa_ansible_lab.pub:/home/ansiblelab/.ssh/authorized_keys:ro
+  node4:
+    image: ansible-lab
+    ports:
+      - "2224:22"
+    volumes:
+      - ~/.ssh/id_rsa_ansible_lab.pub:/home/ansiblelab/.ssh/authorized_keys:ro

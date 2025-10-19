@@ -1,0 +1,25 @@
+- name: Gather package facts
+  ansible.builtin.package_facts:
+
+- name: Check package versions
+  ansible.builtin.shell: "apt-cache policy {{ item }} | grep 'Candidate:' | awk '{print $2}'"
+  register: latest_versions
+  loop: "{{ packages_to_check }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Display package status
+  ansible.builtin.debug:
+    msg: "{{ item.item }} {{ 'OK (up-to-date)' 
+          if ansible_facts.packages[item.item] is defined and
+             ansible_facts.packages[item.item][0].version == item.stdout
+          else 'NOT OK (deprecated or not installed' }}"
+  loop: "{{ latest_versions.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Update packages if update_deprecated is true
+  ansible.builtin.package:
+    name: "{{ packages_to_check }}"
+    state: latest
+  when: update_deprecated

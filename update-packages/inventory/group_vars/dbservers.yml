@@ -1,0 +1,6 @@
+packages_to_check:
+  - postgresql
+  - python3
+  - git
+
+update_deprecated: false
