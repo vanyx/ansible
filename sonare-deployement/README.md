@@ -1,6 +1,6 @@
 # Sonare - Deployement
 
-Ce playbook/roles Ansible me permet de configurer le backend de mon app 'Sonare' :
+Ce playbook/roles Ansible me permet de configurer le backend de mon app `Sonare` :
 - Configuration du serveur
 - Installation des composants
 - Déploiement/run du backend (BDD, API, crons python)
@@ -13,7 +13,7 @@ Cela me permet ainsi, sur demande, de déployer rapidement le backend de l'app.
 Le domaine doit exister et pointer vers l’adresse IP du serveur où l’application sera déployée.  
   
 **2. Accès SSH root :**  
-Un utilisateur ayant accès en ssh avec les droits **sudo** est necessaire pour l'execution du playbook.
+Un utilisateur ayant accès en ssh avec les droits **sudo** est nécessaire pour l'execution du playbook.
 
 **3. Configurer l'accès en SSH via clé :**
 - L’accès ssh au serveur doit être configuré avec une clé privée/clé publique.
@@ -27,7 +27,7 @@ backend ansible_host=YOUR_HOST ansible_port=22 ansible_user=YOUR_USER ansible_ss
 ```
 
 **Playbook (à modifier) :**
-```ini
+```yml
 - name: Sonare - Deployement
   hosts: backend
   become: true
@@ -42,6 +42,11 @@ backend ansible_host=YOUR_HOST ansible_port=22 ansible_user=YOUR_USER ansible_ss
     site_name: "sonare"
     domain_name: "YOUR_DOMAINE"
     ssl_email: "YOUR_EMAIL_ADDRESS"
+```
+
+**Run :**
+```bash
+ansible-playbook -i hosts playbook.yml
 ```
 
 ## Détails techniques
