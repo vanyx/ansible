@@ -1,0 +1,19 @@
+- name: Installer Docker
+  apt:
+    name: docker.io
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Installer Docker Compose
+  apt:
+    name: docker-compose
+    state: present
+  become: true
+
+- name: Ajouter l'utilisateur au groupe docker
+  user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: yes
+  become: true

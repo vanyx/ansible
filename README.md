@@ -1,8 +1,8 @@
 # Ansible
 
-Contient mes playbooks & roles Ansible.  
+Contient mes projets Ansible.  
   
-Il inclut également un **lab Docker simple prêt à l’emploi**, configuré pour tester Ansible via SSH.
+Il inclut également un **lab Docker simple prêt à l’emploi**, configuré pour des tests Ansible via SSH sur plusieurs hosts.
 
 ## Docker Lab
 
