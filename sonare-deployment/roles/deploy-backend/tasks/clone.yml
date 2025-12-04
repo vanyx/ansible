@@ -1,0 +1,67 @@
+# -------------------------------------------------------------------
+# Role: Clone Backend Repository
+#
+# This role sets up the deployment user SSH environment and clones
+# the backend Git repository into /opt/{{ repo_name }}. It ensures
+# correct permissions and marks the clone directory as a safe Git directory.
+# -------------------------------------------------------------------
+
+- name: Ensure backend directory exists
+  ansible.builtin.file:
+    path: /opt/{{ repo_name }}
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: '0755'
+
+- name: Ensure .ssh directory exists for deploy user
+  ansible.builtin.file:
+    path: "/home/{{ deploy_user }}/.ssh"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: '0700'
+
+- name: Copy SSH private key for deploy user
+  ansible.builtin.copy:
+    src: "{{ git_local_ssh_key }}"
+    dest: "/home/{{ deploy_user }}/.ssh/id_ed25519"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: '0600'
+
+- name: Ensure known_hosts file exists
+  ansible.builtin.file:
+    path: "/home/{{ deploy_user }}/.ssh/known_hosts"
+    state: touch
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: '0644'
+
+- name: Add GitHub to known_hosts
+  ansible.builtin.known_hosts:
+    path: "/home/{{ deploy_user }}/.ssh/known_hosts"
+    name: github.com
+    key: "{{ lookup('pipe', 'ssh-keyscan -t rsa github.com 2>/dev/null') }}"
+    state: present
+
+- name: Mark clone directory as safe for Git
+  ansible.builtin.command:
+    cmd: git config --global --add safe.directory /opt/{{ repo_name }}
+    creates: "/root/.gitconfig"
+
+- name: Clone backend repository
+  ansible.builtin.git:
+    repo: "{{ repo_url }}"
+    dest: /opt/{{ repo_name }}
+    version: "{{ repo_branch }}"
+    key_file: "/home/{{ deploy_user }}/.ssh/id_ed25519"
+    accept_hostkey: yes
+
+- name: Fix ownership of backend directory
+  ansible.builtin.file:
+    path: /opt/{{ repo_name }}
+    state: directory
+    recurse: yes
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"

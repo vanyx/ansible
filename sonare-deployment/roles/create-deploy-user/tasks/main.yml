@@ -1,0 +1,48 @@
+# -------------------------------------------------------------------
+# Role: Create deploy user
+#
+# This role creates a system user for deployment purposes, ensures
+# the user has a home directory, is part of the docker group, and
+# optionally can run Docker commands with sudo without a password.
+# -------------------------------------------------------------------
+
+- name: Ensure docker group exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: Ensure deploy group exists
+  ansible.builtin.group:
+    name: "{{ deploy_user }}"
+    state: present
+
+- name: Ensure deploy user exists
+  ansible.builtin.user:
+    name: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    create_home: yes
+    state: present
+
+- name: Add deploy user to docker group
+  ansible.builtin.user:
+    name: "{{ deploy_user }}"
+    groups: docker
+    append: yes
+
+- name: Ensure deploy home directory exists
+  ansible.builtin.file:
+    path: "/home/{{ deploy_user }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: '0755'
+
+- name: Allow deploy user to run Docker with sudo (optional)
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/{{ deploy_user }}"
+    content: |
+      {{ deploy_user }} ALL=(ALL) NOPASSWD: /usr/bin/docker, /usr/local/bin/docker
+    owner: root
+    group: root
+    mode: '0440'
+  tags: sudo

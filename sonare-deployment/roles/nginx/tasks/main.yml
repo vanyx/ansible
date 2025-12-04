@@ -1,0 +1,131 @@
+# -------------------------------------------------------------------
+# Role: Configure Nginx
+#       Nginx + SSL + API
+#
+# This role installs and configures Nginx to serve:
+#   - A static website located in /var/www/{{ site_name }}
+#   - A Spring Boot API accessible via /api/
+# It sets up SSL certificates using Let's Encrypt (Certbot).
+# -------------------------------------------------------------------
+
+- name: Install Nginx and Certbot
+  apt:
+    name:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Disable default Nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload Nginx
+  become: true
+
+- name: Create site directory
+  file:
+    path: /var/www/{{ site_name }}
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+  become: true
+
+- name: Copy index.html
+  copy:
+    src: index.html
+    dest: /var/www/{{ site_name }}/index.html
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  become: true
+
+- name: Copy icon.png
+  copy:
+    src: icon.png
+    dest: /var/www/{{ site_name }}/icon.png
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  become: true
+
+# -------------------------------------------------------------------
+# Nginx site configuration (HTTP + HTTPS)
+# -------------------------------------------------------------------
+
+- name: Create Nginx configuration for site + API + SSL
+  copy:
+    dest: /etc/nginx/sites-available/{{ site_name }}
+    content: |
+      server {
+          listen 80;
+          server_name {{ domain_name }};
+
+          # Redirect HTTP to HTTPS
+          return 301 https://$host$request_uri;
+      }
+
+      server {
+          listen 443 ssl http2;
+          server_name {{ domain_name }};
+
+          root /var/www/{{ site_name }};
+          index index.html;
+
+          ssl_certificate /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem;
+          ssl_certificate_key /etc/letsencrypt/live/{{ domain_name }}/privkey.pem;
+          include /etc/letsencrypt/options-ssl-nginx.conf;
+          ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+          # Static site
+          location / {
+              try_files $uri $uri/ =404;
+          }
+
+          # Reverse proxy to Spring Boot API
+          location /api/ {
+              proxy_pass http://localhost:8080/;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+          }
+      }
+  notify: Reload Nginx
+  become: true
+
+- name: Enable site
+  file:
+    src: /etc/nginx/sites-available/{{ site_name }}
+    dest: /etc/nginx/sites-enabled/{{ site_name }}
+    state: link
+  notify: Reload Nginx
+  become: true
+
+- name: Ensure Nginx is started and enabled
+  service:
+    name: nginx
+    state: started
+    enabled: true
+  become: true
+
+# -------------------------------------------------------------------
+# SSL certificate generation
+# -------------------------------------------------------------------
+
+- name: Generate Let's Encrypt SSL certificate
+  ansible.builtin.command: >
+    certbot --nginx
+    -n
+    --agree-tos
+    --redirect
+    --hsts
+    --staple-ocsp
+    --email {{ ssl_email }}
+    -d {{ domain_name }}
+  args:
+    creates: "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
+  become: true

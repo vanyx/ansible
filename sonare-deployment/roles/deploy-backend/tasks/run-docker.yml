@@ -1,0 +1,39 @@
+# -------------------------------------------------------------------
+# Role: Docker Compose Deployment
+#
+# This role installs Docker and Docker Compose, ensures the deploy
+# user is in the docker group, stops any existing containers, and
+# rebuilds the application from scratch using docker-compose.
+# -------------------------------------------------------------------
+
+- name: Install Docker
+  apt:
+    name: docker.io
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Install Docker Compose
+  apt:
+    name: docker-compose
+    state: present
+  become: true
+
+- name: Add deploy user to docker group
+  ansible.builtin.user:
+    name: "{{ deploy_user }}"
+    groups: docker
+    append: yes
+  become: true
+
+- name: Stop existing Docker Compose containers
+  ansible.builtin.command:
+    cmd: docker-compose down
+    chdir: /opt/{{ repo_name }}
+  become: true
+
+- name: Build and run Docker Compose containers from scratch
+  ansible.builtin.command:
+    cmd: docker-compose up -d --build --force-recreate
+    chdir: /opt/{{ repo_name }}
+  become: true
